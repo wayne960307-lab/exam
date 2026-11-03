@@ -1,45 +1,57 @@
 # exam
-├── Core                                  # 使用者核心原始碼與標頭檔目錄
-│   ├── Inc                               # 核心標頭檔目錄 (*.h)
-│   │   ├── main.h                        # 專案全域定義、自訂資料型態、引腳別名宣告與周邊 Handle 導出
-│   │   ├── stm32g4xx_hal_conf.h          # HAL 模組啟用設定檔 (管理 TIM、GPIO、RCC 等模組的巨集開關)
-│   │   └── stm32g4xx_it.h                # 中斷服務常式 (ISR) 與異常處理函式原型宣告
-│   └── Src                               # 核心程式碼目錄 (*.c)
-│       ├── main.c                        # 主程式進入點：包含系統初始化、非阻塞狀態機、PWM 呼吸燈演算法、蜂鳴器佇列驅動與 EXTI 回呼
-│       ├── stm32g4xx_hal_msp.c           # MCU Support Package：低階硬體初始化 (GPIO、NVIC、TIM 時鐘與引腳複用對應)
-│       ├── stm32g4xx_it.c                # 核心中斷常式實作檔：包含 SysTick_Handler、EXTI9_5_IRQHandler 與 EXTI15_10_IRQHandler
-│       └── system_stm32g4xx.c            # CMSIS 系統底層檔：晶片啟動向量、SystemInit() 與 SystemCoreClock 變數維護
-├── Drivers                               # 硬體抽象層與架構函式庫
-│   ├── CMSIS                             # ARM Cortex-M4 核心微控制器軟體介面標準函式庫
-│   │   ├── Device                        # STMicroelectronics 晶片特定暫存器定義與中斷向量表
-│   │   │   └── ST
-│   │   │       └── STM32G4xx
-│   │   │           └── Include           # 包含 stm32g474xx.h (暫存器結構映射) 與 system_stm32g4xx.h
-│   │   └── Include                       # ARM 核心架構暫存器標頭檔 (core_cm4.h、cmsis_gcc.h 等)
-│   └── STM32G4xx_HAL_Driver              # ST 官方提供的硬體抽象層驅動程式庫
-│       ├── Inc                           # HAL 驅動標頭檔
-│       │   ├── stm32g4xx_hal.h           # HAL 核心設定與延遲/計時相關 API
-│       │   ├── stm32g4xx_hal_cortex.h    # NVIC 與 SysTick 中斷控制 API
-│       │   ├── stm32g4xx_hal_dma.h       # 直接記憶體存取控制器 API
-│       │   ├── stm32g4xx_hal_exti.h      # 外部中斷控制器 API
-│       │   ├── stm32g4xx_hal_flash.h     # 內部 Flash 快閃記憶體控制 API
-│       │   ├── stm32g4xx_hal_gpio.h      # 通用輸出入腳位模式與中斷設定 API
-│       │   ├── stm32g4xx_hal_pwr.h       # 電源控制與電壓等級設定 API
-│       │   ├── stm32g4xx_hal_rcc.h       # 復位與時鐘控制 (Reset & Clock Control) API
-│       │   ├── stm32g4xx_hal_tim.h       # 定時器基礎、輸入捕獲與 PWM 輸出 API
-│       │   └── stm32g4xx_hal_tim_ex.h    # 高級定時器 (TIM8) 煞車死區與額外特性設定 API
-│       └── Src                           # HAL 驅動實作檔
-│           ├── stm32g4xx_hal.c           # HAL 初始架構、系統滴答時鐘計時驅動
-│           ├── stm32g4xx_hal_cortex.c    # Cortex-M4 優先級群組與中斷啟用控制實作
-│           ├── stm32g4xx_hal_dma.c       # DMA 資料流通道傳輸實作
-│           ├── stm32g4xx_hal_exti.c      # EXTI 線路事件清除與觸發設定實作
-│           ├── stm32g4xx_hal_flash.c     # Flash 讀寫保護與等待週期調整實作
-│           ├── stm32g4xx_hal_gpio.c      # GPIO 初始化、拉電阻、速度與中斷派發實作
-│           ├── stm32g4xx_hal_pwr.c       # 晶片升壓模式 (Range 1 Boost) 調度實作
-│           ├── stm32g4xx_hal_rcc.c       # PLL 鎖相環頻率計算與匯流排分頻實作
-│           ├── stm32g4xx_hal_tim.c       # 計時器基本時脈計數與 PWM 啟動實作
-│           └── stm32g4xx_hal_tim_ex.c    # TIM8 高級定時器 MOE 主輸出致能實作
-├── exam.ioc                              # STM32CubeMX 晶片圖形化設定原始檔 (引腳映射、時鐘樹、周邊配置)
-├── STM32G474RETX_FLASH.ld                # GNU GCC 鏈結腳本 (定義 Flash/SRAM 記憶體區塊邊界與堆疊位置)
-├── startup_stm32g474xx.s                 # ARM 組合語言啟動檔 (中斷向量表、重置處理常式、C 執行環境初始化)
-└── README.md                             # 專案完整說明文件 (硬體接線圖、狀態機設計架構與操作指南)
+# 會提醒你的智慧喝水機 (NUCLEO-G474RE 期中專題)
+定時提醒喝水，支援多段倒數與蜂鳴器/LED 雙重提示，按鈕打卡後重設定時。
+
+## 1. 情境故事
+上班族或學生在電腦前專注工作或念書時，常因過於沉浸而連續數小時忘記補充水分，導致身體缺水或注意力下降。需要一個放在桌面上、不會過度干擾，但能在時間到達時明確提示的定時喝水提醒裝置。
+
+## 2. 替身對照
+- **杯架重力/水位感測器** $\rightarrow$ **PC13 (B1 藍色按鈕)**：按一下代表「拿起水杯喝完水打卡」，重設定時並關閉警報。
+- **提醒時間旋鈕/設定面板** $\rightarrow$ **PC9 (外接按鈕)**：按一下循環切換 30s / 45s / 60s 倒數檔位。
+- **機身氛圍指示燈** $\rightarrow$ **PC8 (外接 LED)**：平時柔和呼吸燈，逾時急促快閃。
+- **語音/警示蜂鳴模組** $\rightarrow$ **PC6 (外接蜂鳴器)**：換檔短嗶聲提示、打卡長確認音、逾時連續警報連響。
+
+## 3. 功能與驗收條件
+| 動作 / 觸發事件 | 預期反應 | 實測結果 |
+| :--- | :--- | :--- |
+| **開機啟動** | 預設以 30 秒倒數，LED 呈現柔和呼吸燈（週期 2 秒） | 符合預期 |
+| **按下 PC9 按鈕** | 循環切換檔位 (30s $\rightarrow$ 45s $\rightarrow$ 60s)，蜂鳴器依檔位嗶 1~3 聲，重新開始計時且呼吸燈不卡頓 | 符合預期 |
+| **倒數時間到達** | 進入警報狀態：LED 轉為急促快閃（100ms 亮/暗），蜂鳴器持續急促連響（150ms 間隔） | 符合預期 |
+| **按下 PC13 按鈕** | 蜂鳴器發出 500ms 長確認音，關閉警報，重設倒數時間，LED 恢復柔和呼吸燈 | 符合預期 |
+
+## 4. 用到的技術
+- **GPIO 外部中斷 (EXTI)**：PC13 (EXTI15_10)、PC9 (EXTI9_5) 下降緣觸發。
+- **軟體時間戳消抖 (Software Debounce)**：利用 `HAL_GetTick()` 計算時間差過濾按鈕機械彈跳（閥值 200ms）。
+- **硬體定時器與 PWM 產生**：
+  - TIM3_CH3：驅動 PC8 LED 實現無段 PWM 調光。
+  - TIM8_CH1：高級定時器輸出 PWM 訊號至 PC6 驅動蜂鳴器發聲（開啟 MOE 主輸出）。
+- **非阻塞式狀態機 (Non-blocking FSM)**：主迴圈完全不使用 `HAL_Delay()`，透過時間戳推演 LED 呼吸燈相位與蜂鳴器發聲佇列。
+
+## 5. 腳位表
+- **PC13** = 板載藍色按鈕 B1 (EXTI13 中斷輸入，內部 Pull-up)
+- **PC9** = 換檔按鈕 (EXTI9 中斷輸入，內部 Pull-up，另一端接地)
+- **PC8** = 提示 LED (TIM3_CH3 PWM 輸出，經限流電阻接至 LED 正極)
+- **PC6** = 蜂鳴器 (TIM8_CH1 PWM 輸出，接至蜂鳴器訊號端/正極)
+- **PA2 / PA3** = USART2 / LPUART1 (ST-LINK 虛擬序列埠 VCP，預留通訊用)
+
+## 6. 建置與執行
+- **開發環境**：STM32CubeIDE (建議 v1.13.0 以上)
+- **目標開發板**：STMicroelectronics NUCLEO-G474RE
+- **燒錄步驟**：
+  1. 使用 USB 傳輸線連接 NUCLEO 開發板至電腦（ST-LINK 介面）。
+  2. 在 STM32CubeIDE 中選取專案，按下快捷鍵 `Ctrl + B` 進行建置。
+  3. 點選工具列綠色 **Run** 按鈕（或按 `Ctrl + F11`）將韌體燒錄至晶片。
+- **操作說明**：
+  - 開機後系統立即啟動 30 秒倒數，PC8 呼吸燈開始運作。
+  - 按下 PC9 切換倒數時間（換檔時蜂鳴器會回饋 1~3 聲嗶聲）。
+  - 時間到達時蜂鳴器連響且 LED 快閃，按下 PC13 打卡解除警報並重設定時。
+
+## 7. 程式結構
+- **`Core/Src/stm32g4xx_it.c`**：
+  - `EXTI15_10_IRQHandler()`：攔截 PC13 中斷並轉發給 HAL 處理常式。
+  - `EXTI9_5_IRQHandler()`：攔截 PC9 中斷，清除 Pending Flag 並轉發回呼。
+- **`Core/Src/main.c`**：
+  - `HAL_GPIO_EXTI_Callback()`：外部中斷回呼，專門執行按鈕去彈跳、狀態重設與檔位切換。
+  - `Update_LED()`：依據主迴圈時間戳記計算正弦/三角波佔空比，更新 `htim3.Instance->CCR3`（呼吸燈/快閃）。
+  - `Update_Buzzer()`：非阻塞步進狀態機，依據模式切換 `htim8.Instance->CCR1`（短音/長音/連續警報）。
+  - `main() while(1)`：主迴圈輪詢計時超時邏輯，調度周邊更新函式。
